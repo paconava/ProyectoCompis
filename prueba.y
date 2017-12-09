@@ -24,8 +24,8 @@
 	int pos = 0; // Para la TS, habra que ver como manejarlo cuando se tenga una TS para cada funcion
 	int posTmp = 0; // Para la TS, habra que ver como manejarlo cuando se tenga una TS para cada funcion
 	char TS_nombre[25]; // Nombre de la TS que se este usando al momento de insertar, para simular el cambio de TS cuando se entra en una funcion
-	struct tabla_tipos **t_tipos[10], e_tipos[10], *b_tipo[10];
-	struct tabla_simbolos **t_sim[10], e_sim[10], *b_sim[10];
+	struct tabla_tipos **t_tipos, e_tipos, *b_tipo;
+	struct tabla_simbolos **t_sim[2], e_sim[2], *b_sim[2];
 	int abst = 0; // Nivel de abstracción para tablas
 %} 
 
@@ -61,6 +61,7 @@
 
 	struct{
 		int tipo;
+		char* nombre;
 		char dir[2];
 		char codigo[2]; // Ver como manejar codigo
 	}tipo_E;
@@ -99,43 +100,43 @@
 P:	{
 	strcpy(TS_nombre, "Global"); printf("> Se esta usando la TS %s\n", TS_nombre);
 	
-	t_tipos[0] = crear_TT();
+	t_tipos = crear_TT();
 	t_sim[0] = crear_TS();
 	
-	e_tipos[0].posicion = INT;
-	strcpy(e_tipos[0].tipo, "int");
-	e_tipos[0].tipo_base = -1;
-	e_tipos[0].dimension = 4;
-	agregar_TT(t_tipos[0], e_tipos[0]);
-	memset(&e_tipos[0], 0, sizeof (e_tipos[0]));
+	e_tipos.posicion = INT;
+	strcpy(e_tipos.tipo, "int");
+	e_tipos.tipo_base = -1;
+	e_tipos.dimension = 4;
+	agregar_TT(t_tipos, e_tipos);
+	memset(&e_tipos, 0, sizeof (e_tipos));
 
-	e_tipos[0].posicion = FLOAT;
-	strcpy(e_tipos[0].tipo, "float");
-	e_tipos[0].tipo_base = -1;
-	e_tipos[0].dimension = 4;
-	agregar_TT(t_tipos[0], e_tipos[0]);
-	memset(&e_tipos[0], 0, sizeof (e_tipos[0]));
+	e_tipos.posicion = FLOAT;
+	strcpy(e_tipos.tipo, "float");
+	e_tipos.tipo_base = -1;
+	e_tipos.dimension = 4;
+	agregar_TT(t_tipos, e_tipos);
+	memset(&e_tipos, 0, sizeof (e_tipos));
 
-	e_tipos[0].posicion = DOUBLE;
-	strcpy(e_tipos[0].tipo, "double");
-	e_tipos[0].tipo_base = -1;
-	e_tipos[0].dimension = 8;
-	agregar_TT(t_tipos[0], e_tipos[0]);
-	memset(&e_tipos[0], 0, sizeof (e_tipos[0]));
+	e_tipos.posicion = DOUBLE;
+	strcpy(e_tipos.tipo, "double");
+	e_tipos.tipo_base = -1;
+	e_tipos.dimension = 8;
+	agregar_TT(t_tipos, e_tipos);
+	memset(&e_tipos, 0, sizeof (e_tipos));
 
-	e_tipos[0].posicion = CHAR;
-	strcpy(e_tipos[0].tipo, "char");
-	e_tipos[0].tipo_base = -1;
-	e_tipos[0].dimension = 1;
-	agregar_TT(t_tipos[0], e_tipos[0]);
-	memset(&e_tipos[0], 0, sizeof (e_tipos[0]));
+	e_tipos.posicion = CHAR;
+	strcpy(e_tipos.tipo, "char");
+	e_tipos.tipo_base = -1;
+	e_tipos.dimension = 1;
+	agregar_TT(t_tipos, e_tipos);
+	memset(&e_tipos, 0, sizeof (e_tipos));
 
-	e_tipos[0].posicion = VOID;
-	strcpy(e_tipos[0].tipo, "void");
-	e_tipos[0].tipo_base = -1;
-	e_tipos[0].dimension = 0;
-	agregar_TT(t_tipos[0], e_tipos[0]);
-	memset(&e_tipos[0], 0, sizeof (e_tipos[0]));
+	e_tipos.posicion = VOID;
+	strcpy(e_tipos.tipo, "void");
+	e_tipos.tipo_base = -1;
+	e_tipos.dimension = 0;
+	agregar_TT(t_tipos, e_tipos);
+	memset(&e_tipos, 0, sizeof (e_tipos));
 
 	}D F{printf("r1\n");} // Aqui se debe de iniciar utilizando la Global
 	;
@@ -180,7 +181,7 @@ L:
 					memset(&e_sim[abst], 0, sizeof (e_sim[abst]));
 					printf("> Insertar en TS de '%s' #%d:\n", TS_nombre, ++TS_tam); // Se simula que se inserta un nuevo simbolo
 					printf(" - Nombre:%s, Tipo:%d, var, Dir:%d, NArgs: -1, TArgs: -1\n", $3.nombre, $$.tipo, dir);
-					dir+=calculo_dimension(t_tipos[abst], $$.tipo); // Debera ser += la dimension del tipo en cuestion}
+					dir+=calculo_dimension(t_tipos, $$.tipo); // Debera ser += la dimension del tipo en cuestion}
 					pos++;
 				}else{
 					yyerror("Error de sintaxis");
@@ -202,7 +203,7 @@ L:
 					printf("> Insertar en TS de '%s' #%d:\n", TS_nombre, ++TS_tam); // Se simula que se inserta un nuevo simbolo
 					//printf(" - Nombre:%s, Tipo:%d, var, Dir:%d, NArgs: -1, TArgs: -1\n", $1.nombre, $$.tipo, dir);
 
-					dir+=calculo_dimension(t_tipos[abst], $$.tipo); // Debera ser += la dimension del tipo en cuestion
+					dir+=calculo_dimension(t_tipos, $$.tipo); // Debera ser += la dimension del tipo en cuestion
 					pos++;
 				}else{
 					yyerror("Error de sintaxis");
@@ -218,13 +219,14 @@ C:
 				// Esta parte cambia mucho si el tipo ya existe, asumo que no
 				printf("> Insertar TT #%d", ++TT_tam); // Se simula que se inserta un nuevo tipo
 				$$.tipo = $4.tipo; // Si el tipo ya existia, en realidad se asigna el tipo ya existente
-				e_tipos[abst].posicion = ++T_pos;
-				strcpy(e_tipos[abst].tipo, "array");
-				e_tipos[abst].tipo_base = $4.tipo;
-				e_tipos[abst].dimension = $2.numero;
+				$$.dim = calculo_dimension(t_tipos, $$.tipo);
+				e_tipos.posicion = ++T_pos;
+				strcpy(e_tipos.tipo, "array");
+				e_tipos.tipo_base = $4.tipo;
+				e_tipos.dimension = $2.numero;
 
-				agregar_TT(t_tipos[abst], e_tipos[abst]);
-				memset(&e_tipos[abst], 0, sizeof (e_tipos[abst]));
+				agregar_TT(t_tipos, e_tipos);
+				memset(&e_tipos, 0, sizeof (e_tipos));
 				
 				printf(" - array, TipoBase:%d, Dim:%d\n", $4.tipo, $2.numero);
 				$$.dim = $2.numero;
@@ -246,8 +248,7 @@ F:
 					e_sim[abst].tipo = tipo_global;
 					e_sim[abst].tipoVar = func;
 					e_sim[abst].dir = dir;
-
-					dir+=calculo_dimension(t_tipos[abst], tipo_global); // Debera ser += la dimension del tipo en cuestion}
+					dir+=calculo_dimension(t_tipos, tipo_global); // Debera ser += la dimension del tipo en cuestion}
 					pos++;
 			}else{
 					yyerror("Error de sintaxis");
@@ -255,38 +256,39 @@ F:
 					printf("La variable '%s' ya existe\n", $3.nombre);
 					exit(0);
 			}
+
+			dirTmp = dir;
+			posTmp = pos;
+			dir = 0;
+			++abst;
+			t_sim[abst] = crear_TS();
 		}
 			//printf(" - Nombre:%s, Tipo:%d, func, Dir:-1, NArgs: A.tam, TArgs: A.lista\n", $3.nombre, tipo_global);}
 	'('A')'		{
 					printf("> Crear nueva TS para funcion '%s'\n", $3.nombre);
-					dirTmp = dir;
-					posTmp = pos;
-					dir = 0;
-					pos = 0;
-					++abst;
-					t_sim[abst] = crear_TS();
-					t_tipos[abst] = crear_TT();
+					
 					strcpy(TS_nombre, $3.nombre);
 					printf("> Se empezara usar la TS de %s\n", TS_nombre);
 					TS_tam = 0;
 					printf("> Actualizar TS global con la lista de tipos de A:\n - %s\n", $6.lista);
-					e_sim[abst-1].nargs = strlen($6.lista);
-					e_sim[abst-1].tipo_args = crear_lista_param();
+					e_sim[0].nargs = strlen($6.lista);
+					e_sim[0].tipo_args = crear_lista_param();
 					for(int i=0;i<strlen($6.lista);i++)
-						agregar_lista_param(e_sim[abst-1].tipo_args, ((int)($6.lista[i])-48));
-					agregar_TS(t_sim[abst-1], e_sim[abst-1]);
-					memset(&e_sim[abst-1], 0, sizeof (e_sim[abst-1]));
+						agregar_lista_param(e_sim[0].tipo_args, ((int)($6.lista[i])-48));
+					agregar_TS(t_sim[0], e_sim[0]);
+					memset(&e_sim[0], 0, sizeof (e_sim[0]));
 				}
 	'{'D S'}'';'	{
 						printf("> Destruir TS de '%s' antes de crear nueva funcion\n", TS_nombre);
 						destruir_TS(t_sim[abst]);
-						destruir_TT(t_tipos[abst]);
-						--abst;
+						//destruir_TT(t_tipos[abst]);
 						dir = dirTmp;
 						pos = posTmp;
+						--abst;
 					}
 	 F		{// HASTA AQUI SE ACABA LA DECLARACION DE FUNCIONES (r6.1)
-			printf("r6.1\n");}
+				printf("r6.1\n");
+			}
 	|		{printf("r6.2\n");}
 	;
 
@@ -299,14 +301,53 @@ A:	G		{printf("r7.1\n");
 G:
 	G ',' T ID	{// FALTA CONSIDERAR EL NO TERMINAL "I"
 			printf("r8.1\n");
+			if((busqueda_por_lexema(t_sim[abst], $4.nombre)) == NULL){
+					e_sim[abst].posicion = pos;
+					strcpy(e_sim[abst].lexema, $4.nombre);
+					e_sim[abst].tipo = $3.tipo;
+					e_sim[abst].tipoVar = param;
+					e_sim[abst].dir = dir;
+					agregar_TS(t_sim[abst], e_sim[abst]);
+					memset(&e_sim[abst], 0, sizeof (e_sim[abst]));
+
+					dir+=calculo_dimension(t_tipos, $3.tipo); // Debera ser += la dimension del tipo en cuestion}
+					pos++;
+			}else{
+					yyerror("Error de sintaxis");
+					printf(" en línea %d:\n", yylineno);
+					printf("La variable '%s' ya existe\n", $4.nombre);
+					exit(0);
+			}
+			
 			strcpy($$.lista, $1.lista);
 			char aux[2]; // Solo se usa en lo que se implementa la lista de A
 			sprintf(aux,"%d",$3.tipo);			
-			strcat($$.lista, aux);}
+			strcat($$.lista, aux);
+			
+			}
 	| T ID		{printf("r8.2\n");
+			if((busqueda_por_lexema(t_sim[abst], $2.nombre)) == NULL){
+					e_sim[abst].posicion = pos;
+					strcpy(e_sim[abst].lexema, $2.nombre);
+					e_sim[abst].tipo = tipo_global;
+					e_sim[abst].tipoVar = param;
+					e_sim[abst].dir = dir;
+
+					agregar_TS(t_sim[abst], e_sim[abst]);
+					memset(&e_sim[abst], 0, sizeof (e_sim[abst]));
+					dir+=calculo_dimension(t_tipos, $1.tipo); // Debera ser += la dimension del tipo en cuestion}
+					pos++;
+			}else{
+					yyerror("Error de sintaxis");
+					printf(" en línea %d:\n", yylineno);
+					printf("La variable '%s' ya existe\n", $2.nombre);
+					exit(0);
+			}
+			
 			char aux[2]; // Solo se usa en lo que se implementa la lista de A
 			sprintf(aux,"%d",$1.tipo);			
-			strcpy($$.lista, aux);}
+			strcpy($$.lista, aux);
+			}
 	;
 
 S:
@@ -316,7 +357,17 @@ S:
 
 U:
 	ID		{printf("r13.1\n");
-			printf("> Verificar que el id '%s' este en la TS de '%s'\n", $1.nombre, TS_nombre);}
+			printf("> Verificar que el id '%s' este en la TS de '%s'\n", $1.nombre, TS_nombre);
+			if((busqueda_por_lexema(t_sim[abst], $1.nombre)) != NULL){
+				// Codigo 
+			}
+			else{
+				yyerror("Error de sintaxis");
+				printf(" en línea %d:\n", yylineno);
+				printf("Variable '%s' no declarada en este ámbito.\n", $1.nombre);
+				exit(0);
+			}
+		}
 	;
 
 E:	E '+' E		{printf("r15.1\n");}
@@ -337,7 +388,7 @@ int main(int argc, char** argv){
 
 	// Debug de tablas
 	printf("\n\n");
-	imprimir_TT(t_tipos[0]);
+	imprimir_TT(t_tipos);
 	imprimir_TS(t_sim[0]);
 	return 0;
 }
