@@ -10,6 +10,8 @@
 "/*" {BEGIN(comentario) ; }
 <comentario>"*/" {BEGIN(INITIAL) ; }
 <comentario>.|[ \n\t] {}
+<comentario><<EOF>> {printf("Error léxico: No se cerraron los comentarios\n");
+					exit(0);}
 
 "int" {return TIPO_INT;}
 
@@ -36,7 +38,7 @@
 	     	}
 
 [;,\[\](){}=+]	return *yytext;
-[ \n]	;
+[ \n\t]	;
     
 .         yyerror("Error Lexico - Caracter no valido"); 
 
