@@ -3,6 +3,7 @@
     void yyerror(char *); 
     #include "y.tab.h" 
 %} 
+%option yylineno
 %x comentario
 %%
 
@@ -13,6 +14,14 @@
 "int" {return TIPO_INT;}
 
 "float" {return TIPO_FLOAT;}
+
+"double" {return TIPO_DOUBLE;}
+
+"char" {return TIPO_CHAR;}
+
+"void" {return TIPO_VOID;}
+
+"struct" {return TIPO_STRUCT;}
 
 "func" {return TIPO_FUNC;}
  
