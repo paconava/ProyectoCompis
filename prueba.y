@@ -14,7 +14,8 @@
     int yylex(void); 
     void yyerror(char *); 
     int yylineno;
-    int tipo_global = INT; // Cambia cuando se reduce a "T"
+    int tipo_global = 0;
+    int base_global = 0; 
 
 	int TS_tam = 0; // Tamanio TS, usado provisionalmente en lo que se implementa la TS
 	int TT_tam = STRUCT + 1; // Tambien provisional, se entiende que la TT inicia con los tipos basicos ya dentro
@@ -65,7 +66,6 @@
 		char dir[2];
 		char codigo[2]; // Ver como manejar codigo
 	}tipo_E;
-
 
 	struct{
 		int tipo;
@@ -150,27 +150,34 @@ D:
 T:
 	TIPO_INT	{printf("r3.1\n");
 			$$.tipo = INT;
-			tipo_global = INT;} // Aprovechar aqui para insertar en tabla de tipos??
+			tipo_global = INT;
+			base_global = -1;} // Aprovechar aqui para insertar en tabla de tipos??
 	| TIPO_FLOAT 	{printf("r3.2\n");
 			$$.tipo = FLOAT;
-			tipo_global = FLOAT;}
+			tipo_global = FLOAT;
+			base_global = -1;}
 	| TIPO_DOUBLE	{printf("r3.3\n");
 			$$.tipo = DOUBLE;
-			tipo_global = DOUBLE;}
+			tipo_global = DOUBLE;
+			base_global = -1;}
 	| TIPO_CHAR	{printf("r3.4\n");
 			$$.tipo = CHAR;
-			tipo_global = CHAR;}
+			tipo_global = CHAR;
+			base_global = -1;}
 	| TIPO_VOID	{printf("r3.5\n");
 			$$.tipo = VOID;
-			tipo_global = VOID;}
+			tipo_global = VOID;
+			base_global = -1;}
 	| TIPO_STRUCT	{printf("r3.6\n");
 			$$.tipo = STRUCT;
-			tipo_global = STRUCT;}
+			tipo_global = STRUCT;
+			base_global = -1;}
 	;
 
 L:
 	L ',' ID C 	{printf("r4.1\n");
 				$$.tipo = $4.tipo;
+				$$.base = base_global;
 				if((busqueda_por_lexema(t_sim[abst], $3.nombre)) == NULL){
 					e_sim[abst].posicion = pos;
 					strcpy(e_sim[abst].lexema, $3.nombre);
@@ -181,7 +188,8 @@ L:
 					memset(&e_sim[abst], 0, sizeof (e_sim[abst]));
 					printf("> Insertar en TS de '%s' #%d:\n", TS_nombre, ++TS_tam); // Se simula que se inserta un nuevo simbolo
 					printf(" - Nombre:%s, Tipo:%d, var, Dir:%d, NArgs: -1, TArgs: -1\n", $3.nombre, $$.tipo, dir);
-					dir+=calculo_dimension(t_tipos, $$.tipo); // Debera ser += la dimension del tipo en cuestion}
+					$4.dim=get_dimension(t_tipos, $$.tipo);
+					dir+=$4.dim;
 					pos++;
 				}else{
 					yyerror("Error de sintaxis");
@@ -192,6 +200,7 @@ L:
 			}
 	| ID C 			{printf("r4.2\n");
 				$$.tipo = $2.tipo;
+				$$.base = base_global;
 				if((busqueda_por_lexema(t_sim[abst], $1.nombre)) == NULL){
 					e_sim[abst].posicion = pos;
 					strcpy(e_sim[abst].lexema, $1.nombre);
@@ -202,8 +211,8 @@ L:
 					memset(&e_sim[abst], 0, sizeof (e_sim[abst]));
 					printf("> Insertar en TS de '%s' #%d:\n", TS_nombre, ++TS_tam); // Se simula que se inserta un nuevo simbolo
 					//printf(" - Nombre:%s, Tipo:%d, var, Dir:%d, NArgs: -1, TArgs: -1\n", $1.nombre, $$.tipo, dir);
-
-					dir+=calculo_dimension(t_tipos, $$.tipo); // Debera ser += la dimension del tipo en cuestion
+					$2.dim=get_dimension(t_tipos, $$.tipo);
+					dir+=$2.dim;
 					pos++;
 				}else{
 					yyerror("Error de sintaxis");
@@ -218,21 +227,31 @@ C:
 	'[' INDICE_DEC ']' C	{printf("r5.1\n");
 				// Esta parte cambia mucho si el tipo ya existe, asumo que no
 				printf("> Insertar TT #%d", ++TT_tam); // Se simula que se inserta un nuevo tipo
-				$$.tipo = $4.tipo; // Si el tipo ya existia, en realidad se asigna el tipo ya existente
-				$$.dim = calculo_dimension(t_tipos, $$.tipo);
+				$$.base = base_global;
 				e_tipos.posicion = ++T_pos;
+				if(base_global == -1){
+					$$.dim = $2.numero*calculo_dimension(t_tipos, $4.tipo);
+					base_global = $4.tipo;
+					e_tipos.tipo_base = $4.tipo;
+					$$.tipo = T_pos;
+				}else{
+					$$.dim = $2.numero*$4.dim;
+					base_global = $4.tipo;
+					e_tipos.tipo_base = T_pos-1;
+					$$.tipo = T_pos;
+				}
 				strcpy(e_tipos.tipo, "array");
-				e_tipos.tipo_base = $4.tipo;
-				e_tipos.dimension = $2.numero;
+				
+				e_tipos.dimension = $$.dim;
 
 				agregar_TT(t_tipos, e_tipos);
 				memset(&e_tipos, 0, sizeof (e_tipos));
 				
 				printf(" - array, TipoBase:%d, Dim:%d\n", $4.tipo, $2.numero);
-				$$.dim = $2.numero;
 				}
 	|			{printf("r5.2\n");
-				$$.tipo = tipo_global;}
+				$$.tipo = tipo_global;
+				base_global = -1;}
 	;
 
 
@@ -379,11 +398,13 @@ void yyerror(char *s) {
 }
  
 extern FILE *yyin;
+extern FILE *codInt;
 
 int main(int argc, char** argv){
 	if(argc > 1){
 		yyin = fopen(argv[1], "r");
 	}
+
 	yyparse();
 
 	// Debug de tablas
@@ -544,6 +565,14 @@ int calculo_dimension (struct tabla_tipos **TT, int pos){
 		pos = reg->tipo_base;
 	}while(pos != -1);
 	
+	return dimension;
+}
+
+int get_dimension (struct tabla_tipos **TT, int pos){
+	struct tabla_tipos *reg;
+	int dimension;
+	reg = busqueda_por_posicion_TT(TT, pos);
+	dimension = reg->dimension;
 	return dimension;
 }
 
