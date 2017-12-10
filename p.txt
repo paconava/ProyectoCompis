@@ -1,0 +1,22 @@
+/* 
+Comentarios
+	* Ya deben funcionar. Si no se cierran, tira error léxico.
+	* Si se repite una variable, tira error de sintáxis.
+  * Si se utiliza una variable no existente en TS, tira error de sintáxis
+*/
+
+int arreglo29[2][3][5], hola2[1], enfin[9];
+int var1;
+double var2;
+char var3;
+float var4;
+
+func int funcion1(int ab, int cd, float gatos){
+	int a;
+	int b;
+};
+func float funcion2(float ad, float cdr, int perro){
+	int a;
+	float c;
+	c = a + perro;
+};
