@@ -42,6 +42,7 @@ void destruir_TT (struct tabla_tipos **TT);
 void destruir_lista_param (struct lista_tipo_args **lista_param);
 void destruir_TS (struct tabla_simbolos **TS);
 int calculo_dimension (struct tabla_tipos **TT, int pos);
+int get_dimension (struct tabla_tipos **TT, int pos);
 void imprimir_lista_param (struct lista_tipo_args **lista_param);
 void imprimir_TS (struct tabla_simbolos **TS);
 void imprimir_TT (struct tabla_tipos **TT);
